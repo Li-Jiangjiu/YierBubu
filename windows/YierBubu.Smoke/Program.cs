@@ -21,7 +21,7 @@ internal static class Program
         var assets=new Assets();
         var renderer=new SceneRenderer(assets);
         BitmapSource Frame(InteractionSnapshot s,string file){var visual=new DrawingVisual();using(var dc=visual.RenderOpen())renderer.Draw(dc,s,ScenePaws.From(s),false);var bitmap=new RenderTargetBitmap(1536,1024,96,96,PixelFormats.Pbgra32);bitmap.Render(visual);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using var f=File.Create(Path.Combine(output,file+".png"));encoder.Save(f);return bitmap;}
-        int WhiteNear(BitmapSource b,Point2 point){int count=0;byte[] pixels=new byte[1536*1024*4];b.CopyPixels(pixels,1536*4,0);for(int y=(int)point.Y-18;y<point.Y+18;y++)for(int x=(int)point.X-18;x<point.X+18;x++){int i=(y*1536+x)*4;if(pixels[i+3]>200&&pixels[i]>205&&pixels[i+1]>205&&pixels[i+2]>205)count++;}return count;}
+        int WhiteNear(BitmapSource b,Point2 point){int count=0;byte[] pixels=new byte[1536*1024*4];b.CopyPixels(pixels,1536*4,0);for(int y=(int)point.Y-18;y<point.Y+18;y++)for(int x=(int)point.X-18;x<point.X+18;x++){int i=(y*1536+x)*4;if(pixels[i+3]>200&&pixels[i]>235&&pixels[i+1]>235&&pixels[i+2]>235)count++;}return count;}
         Test("approved-assets-load",()=>Check(assets.Scene.PixelWidth==1536&&assets.Paws.PixelHeight==1024,"invalid dimensions"));
         Test("missing-assets-fail-clearly",()=>{try{_ = new Assets(Path.Combine(output,"missing"));throw new Exception("missing art accepted");}catch(FileNotFoundException){}});
         Frame(InteractionSnapshot.Empty,"idle");
@@ -36,12 +36,16 @@ internal static class Program
         try {
             Test("transparent-floating-nonactivating-window",()=>{Check(window.AllowsTransparency&&window.Topmost&&!window.ShowInTaskbar&&!window.ShowActivated,"wrong window flags");Check((NativeMethods.GetWindowLongPtr(new WindowInteropHelper(window).Handle,-20).ToInt64()&0x08000000)!=0,"NOACTIVATE missing");});
             Test("scale-and-reset-position",()=>{window.SetScale(0.75);Check(window.Width==225&&window.Height==150,"75% size");window.SetScale(1.25);Check(window.Width==375&&window.Height==250,"125% size");window.SetScale(1);window.ResetPosition();Check(double.IsFinite(window.Left)&&double.IsFinite(window.Top),"position invalid");});
+            Test("style-changes-preserve-foreground-window",()=>{
+                var foreground=new Window{Title="Focus sentinel",Width=200,Height=100};foreground.Show();foreground.Activate();
+                try {var before=NativeMethods.GetForegroundWindow();Check(before==new WindowInteropHelper(foreground).Handle,"sentinel not active");window.SetClickThrough(true);Check(NativeMethods.GetForegroundWindow()==before,"pet stole focus enabling click-through");window.SetClickThrough(false);Check(NativeMethods.GetForegroundWindow()==before,"pet stole focus disabling click-through");}finally{foreground.Close();}
+            });
             Test("click-through-native-style",()=>{window.SetClickThrough(true);Check((NativeMethods.GetWindowLongPtr(new WindowInteropHelper(window).Handle,-20).ToInt64()&0x20)!=0,"transparent style missing");window.SetClickThrough(false);Check((NativeMethods.GetWindowLongPtr(new WindowInteropHelper(window).Handle,-20).ToInt64()&0x20)==0,"transparent style persisted");});
             Test("hide-show-keeps-window-usable",()=>{window.Hide();Check(!window.IsVisible,"did not hide");window.Show();Check(window.IsVisible,"did not show");});
             Test("raw-input-registration-and-stop",()=>{using var input=new InputMonitor();input.Start();Check(input.Listening,input.Status);input.Stop();Check(!input.Listening,"listener remained active");});
         } finally {window.Close();}
         results["environment"]=new{os=RuntimeInformation.OSDescription,architecture=RuntimeInformation.ProcessArchitecture.ToString(),sourceCommit=Environment.GetEnvironmentVariable("SOURCE_COMMIT")??"local",physicalInputVerified=false,windows10ClientVerified=false,windows11ClientVerified=false,scope="RenderTargetBitmap + real HWND/styles + Raw Input API registration; no synthetic system input"};
-        results["summary"]=new{failures,passed=results.Count-failures,total=results.Count};
+        results["summary"]=new{failures,passed=results.Count-1-failures,total=results.Count-1};
         File.WriteAllText(Path.Combine(output,"result.json"),JsonSerializer.Serialize(results,new JsonSerializerOptions{WriteIndented=true}));app.Shutdown();return failures==0?0:1;
     }
 }

@@ -139,6 +139,33 @@ Test("truncated malformed and overrun packets are ignored", () => {
     Check(RawInputDecoder.Decode(b,new()).Count==0);b[24]=0x1e;b[4]=99;Check(RawInputDecoder.Decode(b,new()).Count==0);
 });
 
+byte[] KeyPacket(ulong device,ushort scan,ushort flags){var b=new byte[40];System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(b,1);System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(4),40);System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(b.AsSpan(8),device);System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(24),scan);System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(26),flags);b[30]=65;return b;}
+byte[] MousePacket(ulong device,ushort flags){var b=new byte[48];System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(4),48);System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(b.AsSpan(8),device);System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(28),flags);return b;}
+Test("two keyboards count physical presses but release only last logical hold", () => {
+    var session=new RawInputSession();var activity=new InputActivity();var state=new InteractionState(0);
+    void Send(byte[] b,double time){foreach(var e in session.Decode(b)){activity.Record(e);state.Handle(e,time);}}
+    Send(KeyPacket(11,0x1e,0),0);Send(KeyPacket(22,0x1e,0),0.01);Send(KeyPacket(11,0x1e,1),0.2);
+    Check(state.Snapshot(0.2).Keys.Contains('a')&&activity.KeyPresses==2);
+    Send(KeyPacket(22,0x1e,0),0.3);Check(activity.KeyPresses==2);
+    Send(KeyPacket(22,0x1e,1),0.4);Check(state.Snapshot(0.4).Keys.Count==0);
+});
+Test("opposite keyboard release order preserves original hold", () => {
+    var session=new RawInputSession();session.Decode(KeyPacket(11,0x1e,0));session.Decode(KeyPacket(22,0x1e,0));
+    Check(session.Decode(KeyPacket(22,0x1e,1)).Count==0);
+    Check(session.Decode(KeyPacket(11,0x1e,0)).Single().Repeat);
+    Check(session.Decode(KeyPacket(11,0x1e,1)).Single().Kind==InputKind.KeyUp);
+});
+Test("two mice retain button until both release", () => {
+    var session=new RawInputSession();var activity=new InputActivity();var state=new InteractionState(0);
+    void Send(byte[] b,double time){foreach(var e in session.Decode(b)){activity.Record(e);state.Handle(e,time);}}
+    Send(MousePacket(11,1),0);Send(MousePacket(22,1),0.01);Send(MousePacket(11,2),0.2);
+    Check(state.Snapshot(0.2).Buttons.Contains(MouseButton.Left)&&activity.LeftClicks==2);
+    Send(MousePacket(22,2),0.3);Check(state.Snapshot(0.3).Buttons.Count==0);
+});
+Test("reset discards per-device repeat and aggregation state", () => {
+    var session=new RawInputSession();session.Decode(KeyPacket(11,0x1e,0));session.Reset();Check(!session.Decode(KeyPacket(11,0x1e,0)).Single().Repeat);
+});
+
 int failed=0;
 foreach(var (name,body) in tests) { try { body();Console.WriteLine($"PASS {name}"); } catch(Exception e) { failed++;Console.WriteLine($"FAIL {name}: {e.Message}"); } }
 Console.WriteLine($"{tests.Count-failed}/{tests.Count} passed");
