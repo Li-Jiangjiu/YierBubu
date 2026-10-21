@@ -1,0 +1,25 @@
+name: Windows desktop checks
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/windows-desktop]
+  pull_request:
+    paths: ['windows/**', '.github/workflows/windows-checks.yml']
+permissions:
+  contents: read
+jobs:
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Core tests
+        run: dotnet run --project windows/YierBubu.Tests -c Release
+      - name: Asset preparation tests
+        run: python -m unittest discover -s windows/tests -v
