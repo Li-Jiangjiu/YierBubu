@@ -80,6 +80,65 @@ Test("counts exclude repeats releases and invalid scrolling", () => {
     Check(a.KeyPresses==1&&a.RightClicks==1&&a.MiddleClicks==1&&a.LeftClicks==0&&a.ScrollEvents==1);
 });
 
+Test("all scene keys have unique labels and consistent paw halves", () => {
+    Check(SceneLayout.Keys.Count==36&&SceneLayout.Keys.Select(k=>k.Label).Distinct().Count()==36);
+    Check(SceneLayout.Key('a')!.LeftPaw&&!SceneLayout.Key('j')!.LeftPaw);
+    Check(SceneLayout.Key(' ') is null);
+});
+foreach(var label in "1234567890qwertyuiopasdfghjklzxcvbnm") {
+    char key=label;
+    Test($"paw tip lands on key {key} top", () => {
+        var k=SceneLayout.Key(key)!;var pose=PawPose.Typing(key)!;
+        Check(k.ContainsSurface(pose.Tip,true),$"{key} fingertip outside top");
+        Check(Math.Abs(pose.Tip.X-pose.Contact.X)<0.0001&&Math.Abs(pose.Tip.Y-pose.Contact.Y)<0.0001);
+    });
+}
+Test("mouse left is lower right from Bubu perspective", () => {
+    var left=SceneLayout.MouseContact(MouseButton.Left);var right=SceneLayout.MouseContact(MouseButton.Right);
+    Check(left.X==324&&left.Y==622&&right.X==255&&right.Y==592);
+    Check(SceneLayout.MouseContains(left,MouseButton.Left)&&!SceneLayout.MouseContains(left,MouseButton.Right));
+    Check(SceneLayout.MouseContains(right,MouseButton.Right)&&!SceneLayout.MouseContains(right,MouseButton.Left));
+});
+Test("rapid retarget starts at current visible pose", () => {
+    var motion=new PawMotion(PawPose.Idle(true));motion.Retarget(PawPose.Typing('a')!,0);
+    var before=motion.Pose(0.025);motion.Retarget(PawPose.Typing('t')!,0.025);
+    Check(motion.Pose(0.025)==before);Check(motion.Pose(0.101)==PawPose.Typing('t'));
+});
+Test("motion settles in 75ms and idle returns to zero rotation", () => {
+    var motion=new PawMotion(PawPose.Typing('a')!);motion.Retarget(PawPose.Idle(true),1);
+    Check(motion.IsAnimating(1.074));Check(!motion.IsAnimating(1.076));Check(motion.Pose(1.076).Angle==0);
+});
+Test("mouse mixed buttons and scrolling choose wheel pose", () => {
+    Check(PawPose.Mouse(new HashSet<MouseButton>{MouseButton.Left,MouseButton.Right},false).Contact==new Point2(280,601));
+    Check(PawPose.Mouse(new HashSet<MouseButton>{MouseButton.Left},true).Contact==new Point2(280,601));
+});
+Test("negative coordinate monitor placement uses its own work area", () => {
+    var p=WindowPlacement.BottomRight(new Rect2(-1920,0,1920,1080),300,200,24);
+    Check(p.X==-324&&p.Y==856);
+});
+Test("offscreen and oversized windows are brought into work area", () => {
+    var p=WindowPlacement.Clamp(new Point2(9000,-9000),new Rect2(-1920,-100,1920,1000),300,200);
+    Check(p.X==-300&&p.Y==-100);
+    Check(WindowPlacement.BottomRight(new Rect2(0,0,200,100),300,200,24)==new Point2(0,0));
+});
+
+Test("raw keyboard packet uses physical scan and release flags", () => {
+    var n=new KeyboardNormalizer();var b=new byte[40];System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(b,1);System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(4),40);b[24]=0x1e;b[30]=65;
+    Check(RawInputDecoder.Decode(b,n).Single().Key=='a');b[26]=1;Check(RawInputDecoder.Decode(b,n).Single().Kind==InputKind.KeyUp);
+});
+Test("raw mouse packet separates right and middle transitions", () => {
+    var b=new byte[48];System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(4),48);b[28]=0x14;
+    var events=RawInputDecoder.Decode(b,new());Check(events.Count==2&&events[0].Button==MouseButton.Right&&events[1].Button==MouseButton.Middle);
+});
+Test("raw wheel data is signed and horizontal has its own axis", () => {
+    var b=new byte[48];System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(4),48);b[29]=8;b[30]=0x88;b[31]=0xff;
+    var e=RawInputDecoder.Decode(b,new()).Single();Check(e.Kind==InputKind.Scroll&&e.X==-1&&e.Y==0);
+});
+Test("truncated malformed and overrun packets are ignored", () => {
+    Check(RawInputDecoder.Decode(new byte[3],new()).Count==0);var b=new byte[40];b[0]=1;b[4]=40;b[24]=0xff;b[30]=65;
+    Check(RawInputDecoder.Decode(b,new()).Count==0);b[24]=0x1e;b[4]=99;Check(RawInputDecoder.Decode(b,new()).Count==0);
+});
+
 int failed=0;
 foreach(var (name,body) in tests) { try { body();Console.WriteLine($"PASS {name}"); } catch(Exception e) { failed++;Console.WriteLine($"FAIL {name}: {e.Message}"); } }
 Console.WriteLine($"{tests.Count-failed}/{tests.Count} passed");
