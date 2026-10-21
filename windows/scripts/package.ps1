@@ -32,7 +32,7 @@ $info=[ordered]@{
   version=$Version; platform='win-x64'; target='Windows 10 / Windows 11 x64, Intel and AMD';
   sourceCommit=$SourceCommit; builtOn=[System.Runtime.InteropServices.RuntimeInformation]::OSDescription;
   selfContained=$true; authenticodeSigned=$false; channel='beta';
-  validation=[ordered]@{coreTests='See workflow log';serverDesktopSmoke=$true;smokeReportSHA256=(Get-FileHash $SmokeResult -Algorithm SHA256).Hash.ToLowerInvariant();windows10PhysicalInput=$false;windows11PhysicalInput=$false;intelAndAmdPhysical=$false;multiMonitorPhysical=$false};
+  validation=[ordered]@{coreTests='See workflow log';serverDesktopSmoke=$true;skippedDesktopChecks=$smoke.summary.skipped;smokeReportSHA256=(Get-FileHash $SmokeResult -Algorithm SHA256).Hash.ToLowerInvariant();windows10PhysicalInput=$false;windows11PhysicalInput=$false;intelAndAmdPhysical=$false;multiMonitorPhysical=$false};
   artworkLicense='Character assets excluded from code MIT; original rights remain with their owners.';
   privacy='No typed text, input history, telemetry, networking, startup registration, or simulated system input.'
 }

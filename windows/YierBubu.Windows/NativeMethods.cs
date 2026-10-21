@@ -11,7 +11,6 @@ public static class NativeMethods
     [DllImport("user32.dll",EntryPoint="GetWindowLongPtrW",SetLastError=true)] public static extern nint GetWindowLongPtr(nint window,int index);
     [DllImport("user32.dll",EntryPoint="SetWindowLongPtrW",SetLastError=true)] public static extern nint SetWindowLongPtr(nint window,int index,nint value);
     [DllImport("user32.dll",SetLastError=true)] [return:MarshalAs(UnmanagedType.Bool)] public static extern bool SetWindowPos(nint window,nint after,int x,int y,int width,int height,uint flags);
-    [DllImport("user32.dll")] public static extern nint GetForegroundWindow();
     [DllImport("user32.dll")] public static extern nint MonitorFromWindow(nint window,uint flags);
     [DllImport("user32.dll",CharSet=CharSet.Auto)] [return:MarshalAs(UnmanagedType.Bool)] public static extern bool GetMonitorInfo(nint monitor,ref MonitorInfo info);
     [DllImport("user32.dll")] public static extern uint GetDpiForWindow(nint window);

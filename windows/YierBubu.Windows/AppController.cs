@@ -65,12 +65,12 @@ public sealed class AppController:IDisposable
         if(now-lastBlink>=4&&snapshot.Keys.Count==0&&snapshot.Buttons.Count==0&&snapshot.ScrollX==0&&snapshot.ScrollY==0){lastBlink=now;view.SetBlinking(true);blinkEnd.Start();}
     }
     private void ResetActions(){demo.Clear();state.Reset(Now);frames.Stop();blinkEnd.Stop();view.SetBlinking(false);view.SetSuspended(hidden||!sessionActive);if(!hidden&&sessionActive)Animate();}
-    private void ToggleVisibility()
+    public void ToggleVisibility()
     {
         hidden=!hidden;visibility.Text=hidden?"显示小熊":"隐藏小熊";demo.Clear();state.Reset(Now);view.SetSuspended(hidden||!sessionActive);
         if(hidden){frames.Stop();blinkEnd.Stop();window.Hide();}else{window.Show();Animate();}
     }
-    private void StartDemo()
+    public void StartDemo()
     {
         if(hidden)ToggleVisibility();ResetActions();double start=Now;
         (double Delay,InputEvent Event)[] sequence=[

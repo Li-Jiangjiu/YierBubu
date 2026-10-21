@@ -24,7 +24,7 @@ public sealed class PetWindow:Window
         long style=NativeMethods.GetWindowLongPtr(Handle,-20).ToInt64()|0x08000000|0x80; // NOACTIVATE | TOOLWINDOW
         style=ClickThrough?style|0x20:style&~0x20;
         NativeMethods.SetWindowLongPtr(Handle,-20,new nint(style));
-        NativeMethods.SetWindowPos(Handle,0,0,0,0,0,0x0027); // FRAMECHANGED | NOMOVE | NOSIZE | NOZORDER
+        NativeMethods.SetWindowPos(Handle,0,0,0,0,0,0x0037); // FRAMECHANGED | NOMOVE | NOSIZE | NOZORDER | NOACTIVATE
     }
     public void SetClickThrough(bool enabled){ClickThrough=enabled;UpdateStyles();}
     public void SetScale(double value){if(value!=0.75&&value!=1&&value!=1.25)return;Scale=value;Width=300*value;Height=200*value;ResetPosition();}

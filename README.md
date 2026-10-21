@@ -4,15 +4,25 @@
 
 ## 下载
 
-当前版本：**0.4.0-beta.3 免费测试版**。支持 **macOS 14 及以上**，同一个安装包支持 **Apple 芯片（M 系列）和 Intel**。Windows 版本尚未提供。
+当前版本：**0.4.0-beta.3 免费测试版**。支持 **macOS 14 及以上**，同一个安装包支持 **Apple 芯片（M 系列）和 Intel**。Windows x64 首个测试版正在开发，源码与构建方法见 [Windows 开发说明](windows/README.md)。
 
 - [推荐：下载 DMG 安装包](https://github.com/Li-Jiangjiu/YierBubu/releases/download/v0.4.0-beta.3/YierBubu-macOS-Universal-v0.4.0-beta.3.dmg)
 - [下载 ZIP 安装包](https://github.com/Li-Jiangjiu/YierBubu/releases/download/v0.4.0-beta.3/YierBubu-macOS-Universal-v0.4.0-beta.3.zip)
 - [查看版本说明和校验文件](https://github.com/Li-Jiangjiu/YierBubu/releases/tag/v0.4.0-beta.3)
 
-DMG 和 ZIP 二选一即可。GitHub 自动生成的 Source code 压缩包只有本仓库的说明文件，不是安装包。**本仓库仅提供应用下载和使用说明，暂不公开应用源码。**
+DMG 和 ZIP 二选一即可。macOS beta.3 标签下自动生成的 Source code 压缩包只有当时的说明文件，不是安装包。**本分支公开 Windows 实现代码（MIT，仅代码），macOS 源码尚未整理公开；角色素材不适用 MIT。**
 
-## 安装与首次打开
+## Windows 开发与测试包
+
+Windows 首版目标为 Windows 10 / Windows 11 x64，Intel 与 AMD 使用同一份便携 ZIP。保持现有角色构图、36键反馈和鼠标互动，使用右下角托盘控制。
+
+- [Windows 源码、构建与使用说明](windows/README.md)
+- [开发与测试 PR](https://github.com/Li-Jiangjiu/YierBubu/pull/2)
+- [Windows 自动化验证记录](docs/windows/verification.md)
+
+云端构建包通过 Actions artifacts 提供，需登录 GitHub，保留30天；尚未作为正式 Releases 版本发布。Windows Server 与 Windows11 ARM上的x64模拟验证不代替 Windows10/11 实体键鼠或 Intel/AMD 分别实机验收。
+
+## macOS 安装与首次打开
 
 1. 更新前，从屏幕顶部小熊菜单选择“退出一二布布”。
 2. 打开 DMG，将 YierBubu.app 拖入 Applications（应用程序），完成后弹出镜像。ZIP 用户先解压，再将 App 拖入应用程序。
@@ -40,7 +50,7 @@ App 仅用当前物理键位、鼠标按钮和滚动方向驱动动画，不读�
 
 角色原作黄小B，本项目非官方。角色形象、名称、商标及素材的公开分发授权尚未确认；免费提供应用不代表获得角色权利人的授权，也不授予素材再分发许可。
 
-本仓库未公开应用源码，没有在此向安装包或角色素材授予 MIT 开源许可。
+Windows 独立实现代码适用 [MIT 许可](LICENSE)。macOS 安装包及角色素材不在该代码许可范围内，角色素材权利边界见 [Windows 来源与素材说明](windows/THIRD_PARTY_NOTICES.md)。
 
 反馈问题时，请提供 macOS版本、芯片、App版本、监听状态和复现步骤，不需要提供输入文字或其他私人内容。
 
