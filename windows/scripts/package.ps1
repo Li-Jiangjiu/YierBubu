@@ -32,7 +32,7 @@ $info=[ordered]@{
   version=$Version; platform='win-x64'; target='Windows 10 / Windows 11 x64, Intel and AMD';
   sourceCommit=$SourceCommit; builtOn=[System.Runtime.InteropServices.RuntimeInformation]::OSDescription;
   selfContained=$true; authenticodeSigned=$false; channel='beta';
-  validation=[ordered]@{coreTests='See workflow log';serverDesktopSmoke=$true;skippedDesktopChecks=$smoke.summary.skipped;smokeReportSHA256=(Get-FileHash $SmokeResult -Algorithm SHA256).Hash.ToLowerInvariant();windows10PhysicalInput=$false;windows11PhysicalInput=$false;intelAndAmdPhysical=$false;multiMonitorPhysical=$false};
+  validation=[ordered]@{coreTests='See workflow log';desktopSmoke=$true;skippedDesktopChecks=$smoke.summary.skipped;smokeReportSHA256=(Get-FileHash $SmokeResult -Algorithm SHA256).Hash.ToLowerInvariant();windows10PhysicalInput=$false;windows11PhysicalInput=$false;intelAndAmdPhysical=$false;multiMonitorPhysical=$false};
   artworkLicense='Character assets excluded from code MIT; original rights remain with their owners.';
   privacy='No typed text, input history, telemetry, networking, startup registration, or simulated system input.'
 }
@@ -50,6 +50,8 @@ foreach ($file in $original) {
 }
 $check=Start-Process -FilePath (Join-Path $unpacked 'YierBubu.exe') -ArgumentList '--verify-assets' -Wait -PassThru
 if ($check.ExitCode -ne 0) { throw 'Extracted package failed resource verification.' }
+& python (Join-Path $PSScriptRoot 'verify-package.py') $zip
+if ($LASTEXITCODE -ne 0) { throw 'Independent portable ZIP verification failed.' }
 $hash=(Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
 "$hash  $([IO.Path]::GetFileName($zip))" | Set-Content -Encoding ascii (Join-Path $destination 'SHA256SUMS.txt')
 Copy-Item (Join-Path $payload 'RELEASE-INFO.json') $destination
