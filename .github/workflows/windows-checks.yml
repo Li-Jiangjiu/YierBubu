@@ -1,0 +1,61 @@
+name: Windows desktop checks
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'codex/**']
+    paths: ['windows/**', '.github/workflows/windows-checks.yml']
+  pull_request:
+    paths: ['windows/**', '.github/workflows/windows-checks.yml']
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-2022, windows-2025, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Core tests
+        run: dotnet run --project windows/YierBubu.Tests -c Release
+      - name: Asset preparation tests
+        run: python -m unittest discover -s windows/tests -v
+      - name: Publish portable Windows x64 app
+        run: ./windows/scripts/build.ps1 -Output windows/artifacts/publish
+      - name: Publish actual x64 desktop smoke executable
+        run: dotnet publish windows/YierBubu.Smoke -c Release -r win-x64 --self-contained true -o windows/artifacts/smoke-x64
+      - name: Actual Windows window and renderer smoke
+        run: |
+          & ./windows/artifacts/smoke-x64/YierBubu.Smoke.exe windows/artifacts/evidence
+          if ($LASTEXITCODE -ne 0) { throw 'Windows desktop smoke failed.' }
+      - name: Package and re-extract verification
+        run: ./windows/scripts/package.ps1 -PublishDir windows/artifacts/publish -Output windows/artifacts/release -SmokeResult windows/artifacts/evidence/result.json -SourceCommit $env:SOURCE_COMMIT
+      - name: Preserve window and rendering evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-evidence-${{ matrix.runner }}
+          path: windows/artifacts/evidence
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Preserve verified portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: YierBubu-Windows-x64-${{ matrix.runner }}
+          path: |
+            windows/artifacts/release/*.zip
+            windows/artifacts/release/SHA256SUMS.txt
+            windows/artifacts/release/RELEASE-INFO.json
+          if-no-files-found: error
+          retention-days: 30

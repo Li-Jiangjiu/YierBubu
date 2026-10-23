@@ -1,0 +1,13 @@
+.build/
+dist/
+.DS_Store
+.swiftpm/
+# Regenerable previews, verification exports and local application backups
+output/
+.superpowers/
+__pycache__/
+*.py[cod]
+# Runtime character artwork recovered locally by checksum-verified developer tools
+Resources/Layered/*.png
+Resources/Icon/*.png
+Resources/Icon/*.icns
