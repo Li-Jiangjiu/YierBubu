@@ -54,10 +54,10 @@ python -m unittest discover -s windows/tests -v
 ./windows/scripts/build.ps1 -Output windows/artifacts/publish
 # 独立发布 x64 桌面冒烟程序，ARM64 主机也使用同一个 x64 程序进行验证
 dotnet publish windows/YierBubu.Smoke -c Release -r win-x64 --self-contained true -o windows/artifacts/smoke-x64
+$env:SOURCE_COMMIT = git rev-parse HEAD
 & ./windows/artifacts/smoke-x64/YierBubu.Smoke.exe windows/artifacts/evidence
 if ($LASTEXITCODE -ne 0) { throw 'Desktop smoke failed' }
-$sourceCommit = git rev-parse HEAD
-./windows/scripts/package.ps1 -PublishDir windows/artifacts/publish -Output windows/artifacts/release -SmokeResult windows/artifacts/evidence/result.json -SourceCommit $sourceCommit
+./windows/scripts/package.ps1 -PublishDir windows/artifacts/publish -Output windows/artifacts/release -SmokeResult windows/artifacts/evidence/result.json -SourceCommit $env:SOURCE_COMMIT
 ```
 
 输出的 ZIP 包含运行时，使用者不需 .NET SDK。打包前需要可用图形桌面；焦点检查受托管桌面限制时会明确记录未验证，不能代替实体键鼠验收。详见 [Windows 开发说明](windows/README.md) 和 [验证记录](docs/windows/verification.md)。
