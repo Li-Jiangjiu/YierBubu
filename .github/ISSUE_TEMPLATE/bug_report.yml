@@ -1,0 +1,28 @@
+name: 问题反馈
+description: 安装、输入联动或画面问题
+body:
+  - type: input
+    id: system
+    attributes:
+      label: 平台、系统版本与芯片 / CPU
+      placeholder: 例如 Windows 11 / Intel i5，或 macOS 15 / M1
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本与下载来源
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤、预期和实际表现
+      description: 请不要提供密码、输入文字或含私人信息的截图。
+    validations:
+      required: true
+  - type: textarea
+    id: permission
+    attributes:
+      label: 监听状态和分项计数
+      description: 如果与键鼠有关，请注明是否显示监听中，以及哪些分项次数增加。

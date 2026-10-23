@@ -1,0 +1,43 @@
+name: macOS source checks
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'codex/**']
+    paths: ['Sources/**', 'Tests/**', 'scripts/**', 'Package.swift', '.github/workflows/macos-checks.yml']
+  pull_request:
+    paths: ['Sources/**', 'Tests/**', 'scripts/**', 'Package.swift', '.github/workflows/macos-checks.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain information
+        run: |
+          xcode-select -p
+          swift --version
+      - name: Core tests and compile
+        run: bash scripts/swift-tool.sh test
+      - name: Release script syntax
+        run: |
+          for script in scripts/*.sh scripts/tests/*.sh; do bash -n "$script"; done
+          python3 -m compileall -q scripts/release scripts/tests
+      - name: Prepare checksum-verified runtime assets
+        run: python3 scripts/prepare-macos-assets.py
+      - name: Release script integration checks
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+      - name: Check Universal toolchain availability
+        run: bash scripts/check-release-toolchain.sh
+      - name: Build Universal executable
+        run: bash scripts/build-universal.sh --work-dir output/releases/ci-build
+      - name: Preserve internal build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: internal-universal-${{ matrix.runner }}
+          path: output/releases/ci-build/bin/BubuDesktop
+          if-no-files-found: error
